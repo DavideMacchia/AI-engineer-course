@@ -22,6 +22,11 @@ Entrambe ignorano i veri negativi (i 919 facili) e costringono a guardare solo l
 
 - **F1-score** = 2 × (precision × recall) / (precision + recall). è una sintesi di precision e recall in un numero solo. F1 tende allo 0 maggiore è la distanza tra i due. Serve guardarlo quando non puoi calcolare la soglia ottimale dai costi perché nessuno ti sa dire quanto costa un FP e quanto un FN. F1 è il compromesso di default.
 
+### 2.1 Accuracy e Recall nel progetto
+Il primo numero era l'accuracy a 0.787 e sembrava buono perché vuol dire indovinare 3/4 delle predizioni (churner e non), però il dummy aveva un risultato molto simile(0.734) il che suggeriva che il modello non fosse particolarmente buono e infatti quel valore era dato proporzionato alla composizione del dataset; difatti il dummy dando sempre la stessa risposta (resta, non churner) indovinava il 73% delle volte, ignorando il problema reale ovvero che non riesce ad identificare i churner (stesso problema del modello vero e proprio). 
+Il problema vero veniva identificato dalla recall (0.53), ovvero circa la metà dei Churner effettivi veniva identificato dal modello, quindi 177 FN che risultavano in una perdita economica ingente.
+
+
 ## 3. AUC e indipendenza dalla soglia
 
 AUC misura la qualità dell'ordinamento prodotto dal modello. Operativamente: prendi un churner e un non-churner a caso; AUC = la probabilità che il modello assegni un punteggio più alto al churner. Il nostro 0.830 significa 83 coppie su 100 ordinate correttamente. 0.5 = ordine casuale (il dummy), 1.0 = ordine perfetto.
