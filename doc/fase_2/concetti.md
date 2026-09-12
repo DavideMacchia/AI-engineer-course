@@ -22,6 +22,8 @@ Il **peso w** è "quanto conta questo ingresso" — e il segno dice in che direz
 - w₂ = -1.5 → "più mesi di anzianità (tenure alto) spinge CONTRO il churn" (segno negativo)
 - w₃ = 0.3 → "la spesa mensile conta poco"
 
+Nota, il segno influisce in questo modo solo se la rete ha un layer solo, ma tendenzialmente non lo è e quel segno in realtà potrebbe spingere in senso opposto (dipende dai segni del layer precedente)
+
 Il **bias b** è la predisposizione del neurone ad accendersi dagli ingressi (z > 0), più è bassa e maggiore dovrà essere la somma dei pesi per compensare e accendere il neurone.
 
 ## Forward pass
@@ -36,7 +38,7 @@ Il forward pass è semplicemente il processo di propagazione in avanti dei dati,
 
 ## Loss
 
-La Loss è la misura dell'errore. Alla rete, e quindi ai singoli nodi, serve avere una misura di quanto sbaglia.
+La Loss è la misura dell'errore, un unico valore per tutta la rete. Alla rete, e quindi ai singoli nodi, serve avere una misura di quanto sbaglia.
 
 Si confrontano la predizione (y_pred) con la verità (y). Per esempio nella classificazione binaria usaimo la binary cross-entropy:
 - loss = -[ y·log(y_pred) + (1-y)·log(1-y_pred) ]
@@ -72,8 +74,8 @@ domanda di prima, fatta a un peso alla volta.
 
 ## Backpropagation
 
-La propagazione dell'errore parte dall'output finale, dalla predizione, la quale genera una loss che và però distribuito su tutti i nodi precedenti perchè responsabili, quindi viene propagata all'indietro.
-- Errore in output
+Processo di calcolo del gradiente. Diverso dalla fase di aggiustamento dei pesi dei neuroni, che è successiva.
+
 - ──indietro──►  quanto ha sbagliato ogni neurone del layer 2
 - ──indietro──►  quanto ha sbagliato ogni neurone del layer 1
 - ──indietro──►  quanto è "colpevole" ogni singolo peso
