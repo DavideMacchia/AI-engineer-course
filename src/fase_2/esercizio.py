@@ -16,6 +16,8 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from forward_pass import forward_pass
+from loss import calcola_loss
 
 SEME = 42
 QUOTA_TEST = 0.2  # 80% train / 20% test
@@ -86,25 +88,23 @@ def inizializza_rete(dim_input: int, dim_nascoste=DIM_NASCOSTE, seme=SEME):
 
 
 
-
-
-
-
 def main():
     X_train, X_test, y_train, y_test = prepara_dati()
     dim_input = X_train.shape[1]
     rete, dimensioni = inizializza_rete(dim_input)
 
+
     print("=== Stadio 0: dati e struttura ===")
     print(f"Train: X {X_train.shape}, y {y_train.shape}")
     print(f"Test:  X {X_test.shape},  y {y_test.shape}")
     print(f"Architettura: {' -> '.join(map(str, dimensioni))}")
-    print(f"Attivazioni:  nascosti = ReLU, output = sigmoide (binaria)\n")
-    for i, layer in enumerate(rete, start=1):
-        print(f"  layer {i}: W {layer['W'].shape}, b {layer['b'].shape}, "
-              f"|W| medio = {np.abs(layer['W']).mean():.4f}, "
-              f"b tutti zero = {np.all(layer['b'] == 0)}")
+    print(f"Forwarding...\n")
 
+    y_pred, cache = forward_pass(X_train, rete)
+    print(f"Result y_pred: {y_pred}\n")
+
+    loss = calcola_loss(y_pred, y_train)
+    print(f"Loss iniziale: {loss:.4f}")
 
 if __name__ == "__main__":
     main()
