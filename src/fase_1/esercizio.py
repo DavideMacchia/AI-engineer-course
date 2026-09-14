@@ -23,6 +23,9 @@ def main(nome_modello: str = MODELLO_DEFAULT):
     X_test = preprocessore.transform(X_test)
     nomi_colonne = preprocessore.get_feature_names_out()
 
+    print(f"churner nel test: {int(y_test.sum())}")   # <-- aggiungi questa
+
+
     mlflow.set_tracking_uri(PERCORSO_MLFLOW)
     mlflow.set_experiment("churn-prediction")
     with mlflow.start_run(run_name=nome_modello):

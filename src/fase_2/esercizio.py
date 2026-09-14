@@ -9,102 +9,39 @@ d'ingresso, i due hidden layer da 8 e l'output da 1 restano identici.
 In questo stadio si prepara SOLO l'impalcatura: dati divisi e pesi inizializzati.
 Il forward pass, la loss e la backpropagation arrivano negli stadi successivi.
 """
-from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from forward_pass import forward_pass
+from back_propagation import backward
+from data import prepara_dati, inizializza_rete
+from evaluation import soglia_soglia_ottima, costo_sul_test
 from loss import calcola_loss
-
-SEME = 42
-QUOTA_TEST = 0.2  # 80% train / 20% test
-CARTELLA_PROGETTO = Path(__file__).resolve().parent.parent.parent
-PERCORSO_DATI = CARTELLA_PROGETTO / "data" / "WA_Fn-UseC_-Telco-Customer-Churn.csv"
-
-# Architettura: input calcolato dai dati, poi 8 -> 8 -> 1 come da traccia.
-DIM_NASCOSTE = [8, 8]
-
-
-# --------------------------------------------------------------------------- #
-# 1. Dati: carico, pulisco, divido PRIMA di preprocessare
-# --------------------------------------------------------------------------- #
-def prepara_dati():
-    """Carica il Telco e restituisce X_train, X_test, y_train, y_test in NumPy.
-
-    Lo split viene prima del preprocessing: encoder e scaler imparano categorie,
-    media e deviazione dal solo train, altrimenti il test entra nel modello.
-    """
-    df = pd.read_csv(PERCORSO_DATI)
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-    df = df.dropna()
-
-    y = (df["Churn"] == "Yes").astype(int)              # 1 = ha abbandonato
-    X = df.drop(columns=["customerID", "Churn", "TotalCharges"])
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=QUOTA_TEST, random_state=SEME, stratify=y
-    )
-
-    numeriche = X.select_dtypes(include="number").columns
-    testo = X.columns.difference(numeriche)
-    preproc = ColumnTransformer([
-        ("testo", OneHotEncoder(sparse_output=False, handle_unknown="ignore"), testo),
-        ("numeri", StandardScaler(), numeriche),
-    ])
-    X_train = preproc.fit_transform(X_train)            # impara SOLO dal train
-    X_test = preproc.transform(X_test)
-
-    # y come colonna (n, 1): serve cosi' allineata all'output 1 della rete.
-    y_train = y_train.to_numpy().reshape(-1, 1)
-    y_test = y_test.to_numpy().reshape(-1, 1)
-    return X_train, X_test, y_train, y_test
-
-
-# --------------------------------------------------------------------------- #
-# 2. Struttura: pesi casuali piccoli, bias a zero
-# --------------------------------------------------------------------------- #
-def inizializza_rete(dim_input: int, dim_nascoste=DIM_NASCOSTE, seme=SEME):
-    """Crea i parametri della rete: una lista di layer, ognuno con W e b.
-
-    - Pesi: casuali PICCOLI (randn * 0.01). Piccoli e casuali servono per due motivi.
-      Casuali: se tutti i neuroni di un layer partono uguali imparano la stessa cosa
-      per sempre (simmetria mai rotta). Piccoli: pesi grandi mandano subito le
-      attivazioni nelle zone piatte delle funzioni -> gradienti nulli, non si impara.
-    - Bias: a zero. Il bias non soffre di simmetria (lo rompono gia' i pesi),
-      quindi zero va benissimo e non introduce sbilanciamenti iniziali.
-    """
-    rng = np.random.default_rng(seme)
-    dimensioni = [dim_input] + list(dim_nascoste) + [1]   # es. [44, 8, 8, 1]
-
-    rete = []
-    for dim_entra, dim_esce in zip(dimensioni[:-1], dimensioni[1:]):
-        W = rng.standard_normal((dim_entra, dim_esce)) * 0.01
-        b = np.zeros((1, dim_esce))
-        rete.append({"W": W, "b": b})
-    return rete, dimensioni
-
-
+from update import aggiorna
+from forward_pass import forward_pass
 
 def main():
-    X_train, X_test, y_train, y_test = prepara_dati()
+    X_train, X_val, X_test, y_train, y_val, y_test = prepara_dati()
+    print(f"train {X_train.shape}, val {X_val.shape}, test {X_test.shape}")
+    print(f"churner nel test: {int(y_test.sum())}")   # <-- aggiungi questa
+
     dim_input = X_train.shape[1]
     rete, dimensioni = inizializza_rete(dim_input)
 
+    LEARNING_RATE = 0.01
+    EPOCHE = 1000
+    for epoca in range(EPOCHE):
+        y_pred, cache = forward_pass(X_train, rete)
 
-    print("=== Stadio 0: dati e struttura ===")
-    print(f"Train: X {X_train.shape}, y {y_train.shape}")
-    print(f"Test:  X {X_test.shape},  y {y_test.shape}")
-    print(f"Architettura: {' -> '.join(map(str, dimensioni))}")
-    print(f"Forwarding...\n")
+        if epoca % 100 == 0:
+            loss = calcola_loss(y_pred, y_train)
+            print(f"Epoca: {epoca}, Loss: {loss:.4f}")
 
-    y_pred, cache = forward_pass(X_train, rete)
-    print(f"Result y_pred: {y_pred}\n")
+        gradienti = backward(y_pred, y_train, cache, rete)
+        rete = aggiorna(rete, gradienti, LEARNING_RATE)
 
-    loss = calcola_loss(y_pred, y_train)
-    print(f"Loss iniziale: {loss:.4f}")
+    soglia, griglia, costi = soglia_soglia_ottima(X_val, y_val, rete)
+    print(f"Soglia OTTIMA: {soglia:.4f}")
+
+    costo_finale = costo_sul_test(X_test, y_test, soglia, rete)
+    print(f"Costo sul test: {costo_finale} €")
 
 if __name__ == "__main__":
     main()

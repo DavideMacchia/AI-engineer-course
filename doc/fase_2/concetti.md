@@ -47,9 +47,9 @@ Ovvero:
 - Cliente ha davvero churn (y=1), rete dice 0.95 → loss ≈ 0.05 (quasi giusto, punizione minima)
 - Cliente ha davvero churn (y=1), rete dice 0.10 → loss ≈ 2.3 (sbaglia con sicurezza, punizione alta)
 
-## Gradient
+## Gradient e Backpropagation
 
-La backpropagation è quindi il processo iterativo di aggiustare pesi w e bias b di ogni nodo della rete usando la loss.
+La backpropagation è quindi il processo di calcolo del gradiente. Diverso dalla fase di aggiustamento dei pesi dei neuroni, che è successiva.
 
 La domanda è "Per ognuno dei pesi e dei bias, se lo aumento un pochino, la loss sale o scende? E di quanto?" - la risposta è il **gradiente (∂loss/∂w)**
 
@@ -71,10 +71,6 @@ di tutte queste derivate, una per ciascun peso e ciascun bias.**
 Il simbolo **∂loss/∂w₁** si legge "quanto cambia la loss se muovo w₁ (tenendo fermi tutti gli altri)". È la stessa
 domanda di prima, fatta a un peso alla volta.
 
-
-## Backpropagation
-
-Processo di calcolo del gradiente. Diverso dalla fase di aggiustamento dei pesi dei neuroni, che è successiva.
 
 - ──indietro──►  quanto ha sbagliato ogni neurone del layer 2
 - ──indietro──►  quanto ha sbagliato ogni neurone del layer 1
@@ -106,3 +102,15 @@ A ogni giro i pesi si spostano di un pelo verso valori migliori, la loss scende,
 
 Alla fine i pesi non sono più casuali: codificano i pattern del churn imparati dai dati. Quello è il
   modello, ed è quello che avrà senso salvare.
+
+## Vanishing gradient
+
+Il segnale d'errore, tornando indietro strato per strato, si rimpicciolisce a ogni passaggio finché arriva ai primi layer troppo debole per muoverli. 
+È il motivo storico per cui per anni non si riuscivano ad allenare reti profonde.
+
+Nell'esercizio la causa era l'inizializzazione randn * 0.01 dei weight.
+Guardando le Z della cache: si rimpicciolivano di un fattore ~10 a ogni strato (0.0x → 0.000x → 0.00000x). 
+Pesi piccoli → attivazioni piccole → gradienti piccoli → primi layer immobili.
+
+Il rimedio: He initialization. Invece di moltiplicare per un 0.01 fisso a caso, scali i pesi in base a quanti ingressi ha quel layer, così la varianza del segnale resta costante attraverso gli strati invece di collassare.
+- W = randn(dim_entra, dim_esce) * sqrt(2 / dim_entra)
