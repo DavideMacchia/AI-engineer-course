@@ -11,7 +11,7 @@ Il forward pass, la loss e la backpropagation arrivano negli stadi successivi.
 """
 
 from back_propagation import backward
-from data import prepara_dati, inizializza_rete
+from data import prepara_dati, inizializza_rete, DIM_NASCOSTE
 from evaluation import soglia_soglia_ottima, costo_sul_test
 from loss import calcola_loss
 from update import aggiorna
@@ -23,25 +23,30 @@ def main():
     print(f"churner nel test: {int(y_test.sum())}")   # <-- aggiungi questa
 
     dim_input = X_train.shape[1]
-    rete, dimensioni = inizializza_rete(dim_input)
 
     LEARNING_RATE = 0.01
     EPOCHE = 1000
-    for epoca in range(EPOCHE):
-        y_pred, cache = forward_pass(X_train, rete)
 
-        if epoca % 100 == 0:
-            loss = calcola_loss(y_pred, y_train)
-            print(f"Epoca: {epoca}, Loss: {loss:.4f}")
+    # dimensions = [[8,8], [16,16], [32,32], [32,16,8], [64,32,16,8]]
+    dimensions = [[8, 8]]
+    for dimension in dimensions:
+        rete, dimensioni = inizializza_rete(dim_input, dimension)
+        for epoca in range(EPOCHE):
+            y_pred, cache = forward_pass(X_train, rete)
 
-        gradienti = backward(y_pred, y_train, cache, rete)
-        rete = aggiorna(rete, gradienti, LEARNING_RATE)
+            # if epoca % 100 == 0:
+            #     loss = calcola_loss(y_pred, y_train)
+            #     print(f"Epoca: {epoca}, Loss: {loss:.4f}")
 
-    soglia, griglia, costi = soglia_soglia_ottima(X_val, y_val, rete)
-    print(f"Soglia OTTIMA: {soglia:.4f}")
+            gradienti = backward(y_pred, y_train, cache, rete)
+            rete = aggiorna(rete, gradienti, LEARNING_RATE)
 
-    costo_finale = costo_sul_test(X_test, y_test, soglia, rete)
-    print(f"Costo sul test: {costo_finale} €")
+        soglia, griglia, costi = soglia_soglia_ottima(X_val, y_val, rete)
+        costo_val = min(costi)
+        print(f"Dimensioni: {dimension}, Soglia OTTIMA: {soglia:.4f}, Costo sul VAL: {costo_val}€")
+
+        costo_finale = costo_sul_test(X_test, y_test, soglia, rete)
+        print(f"Costo sul test: {costo_finale} €")
 
 if __name__ == "__main__":
     main()
